@@ -372,6 +372,22 @@ while ishandle(hObject) && get(hObject,'Value')
     nirs_data1 = lsl_buffer(:,SD(:,3));
     nirs_data2 = lsl_buffer(:,SD(:,4));
     
+    % Confirm that LUMO stream has valid data
+    if (get(handles.popupmenu_device,'value') == 4) 
+        
+        % Check for potential saturation in LUMO data
+        if (sum(any(nirs_data1 < 1e-10)) > 0)
+            warning('Saturated signals');
+            continue
+        end
+        
+        % Check for any incomplete frames
+        if (sum(any(isnan(nirs_data1))) > 0)
+            warning('Some frames are incomplete');
+            continue
+        end
+    end
+    
     if hb_streamed
         [nirs_data1,nirs_data2] = hb2raw(nirs_data1,nirs_data2,ext);
     end
