@@ -258,7 +258,8 @@ if get(hObject,'Value') %If currently STOPed (not monitoring), execute this LSL 
              lambda = [760,840];
 
         case 4  % LUMO
-            result = lsl_resolve_bypred(lib, 'hostname=''GL'' and type=''NIRS''');
+            pred = ' starts-with(name,''LUMO'') and type=''NIRS''' ;
+            result = lsl_resolve_bypred(lib, pred);
 
             if ~isempty(result) 
                 inlet = lsl_inlet(result{1});
