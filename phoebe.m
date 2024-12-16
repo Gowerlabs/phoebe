@@ -256,6 +256,25 @@ if get(hObject,'Value') %If currently STOPed (not monitoring), execute this LSL 
             end
              [SD,hb_streamed] = parse_fnirs_channels_oxysoft(inlet);
              lambda = [760,840];
+
+        case 4  % LUMO
+            pred = ' starts-with(name,''LUMO'') and type=''NIRS''' ;
+            result = lsl_resolve_bypred(lib, pred);
+
+            if ~isempty(result) 
+                inlet = lsl_inlet(result{1});
+                [~,~] = inlet.pull_chunk();
+            else
+                uiwait(warndlg(sprintf('LSL stream not found.\n\nPlease check if LSL Stream is enabled.'),'PHOEBE'))
+                set(handles.togglebutton_scan,'String','START MONITORING');
+                set(handles.togglebutton_scan,'Value',0);
+                set(handles.radiobutton_singleview,'Enable','on');
+                set(handles.radiobutton_doubleview,'Enable','on');
+                guidata(hObject,handles)
+                return
+            end
+            [SD,hb_streamed] = parse_fnirs_channels_lumo(inlet);
+            lambda = [735,850];
     end
     
     % extinction coefficients
@@ -353,6 +372,22 @@ while ishandle(hObject) && get(hObject,'Value')
     % Pull fNIRS signals from buffer
     nirs_data1 = lsl_buffer(:,SD(:,3));
     nirs_data2 = lsl_buffer(:,SD(:,4));
+    
+    % Confirm that LUMO stream has valid data
+    if (get(handles.popupmenu_device,'value') == 4) 
+        
+        % Check for potential saturation in LUMO data
+        if (sum(any(nirs_data1 < 1e-10)) > 0)
+            warning('Saturated signals');
+            continue
+        end
+        
+        % Check for any incomplete frames
+        if (sum(any(isnan(nirs_data1))) > 0)
+            warning('Some frames are incomplete');
+            continue
+        end
+    end
     
     if hb_streamed
         [nirs_data1,nirs_data2] = hb2raw(nirs_data1,nirs_data2,ext);
